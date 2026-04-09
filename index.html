@@ -912,9 +912,21 @@ async function ghUploadImage(filename, base64data) {
 // LOAD POSTS
 // ============================================================
 async function loadPostsFromGitHub() {
-  const rawBase = `https://raw.githubusercontent.com/${state.config.githubOwner}/${state.config.githubRepo}/main`;
   try {
-    const res = await fetch(`${rawBase}/posts.json?_=${Date.now()}`);
+    // If Admin, bypass all caches and get the absolute latest from GitHub API
+    if (IS_ADMIN && isAuthenticated()) {
+      const res = await fetch(`${GH_API}/repos/${state.config.githubOwner}/${state.config.githubRepo}/contents/posts.json`, { headers: ghHeaders() });
+      if (res.ok) {
+        const file = await res.json();
+        state.posts = JSON.parse(decodeURIComponent(escape(atob(file.content.replace(/\n/g,'')))));
+        renderSidebar();
+        renderGrid();
+        return;
+      }
+    }
+
+    // Normal readers fetch from the deployed site (updates after GitHub Actions finishes)
+    const res = await fetch(`/posts.json?_=${Date.now()}`);
     if (!res.ok) return;
     state.posts = await res.json();
     renderSidebar();
@@ -923,8 +935,18 @@ async function loadPostsFromGitHub() {
 }
 
 async function loadPostContentFromGitHub(postId) {
-  const rawBase = `https://raw.githubusercontent.com/${state.config.githubOwner}/${state.config.githubRepo}/main`;
-  const res = await fetch(`${rawBase}/posts/${postId}.json?_=${Date.now()}`);
+  // If Admin, bypass cache
+  if (IS_ADMIN && isAuthenticated()) {
+    try {
+      const res = await fetch(`${GH_API}/repos/${state.config.githubOwner}/${state.config.githubRepo}/contents/posts/${postId}.json`, { headers: ghHeaders() });
+      if (res.ok) {
+        const file = await res.json();
+        return JSON.parse(decodeURIComponent(escape(atob(file.content.replace(/\n/g,'')))));
+      }
+    } catch(e) {}
+  }
+
+  const res = await fetch(`/posts/${postId}.json?_=${Date.now()}`);
   if (!res.ok) throw new Error('Post not found');
   return res.json();
 }
@@ -968,7 +990,7 @@ async function publishToGitHub(post, isNew) {
 
   state.posts = manifest;
   renderSidebar(); renderGrid();
-  showToast('Published successfully.', 'success');
+  showToast('Published! The public site will update in ~60 seconds.', 'success');
   return post;
 }
 
