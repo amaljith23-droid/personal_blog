@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Journal</title>
+  <meta name="description" content="A personal weekly journal — thoughts, readings, and everything in between." />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Quill Editor -->
+  <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet" />
+  <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+
+  <style>
+    /* ============================================================
+       KERALA DESIGN TOKENS — Light & Tropical
+    ============================================================ */
+    :root {
+      /* Backgrounds */
+      --bg-base:       #fdf8f0;      /* Warm cream — like aged coconut paper */
+      --bg-surface:    #f5ede0;      /* Softer cream */
+      --bg-card:       #ffffff;
+      --bg-hover:      #fef3e6;
+
+      /* Borders */
+      --border:        #d9c9b0;
+      --border-subtle: #e8dccb;
+
+      /* Kerala Red — Communist Party red, mundu border red */
+      --red:           #c0392b;
+      --red-dim:       #a93226;
+      --red-light:     rgba(192,57,43,0.1);
+      --red-glow:      rgba(192,57,43,0.18);
+
+      /* Tropical Green — coconut palm, paddy fields */
+      --green:         #1a6b3a;
+      --green-mid:     #2d8a52;
+      --green-light:   rgba(26,107,58,0.1);
+      --green-sage:    #5a8a6a;
+
+      /* Mountain Blue — Western Ghats mist */
+      --mountain:      #3b5998;
+      --mountain-light:#6b82b0;
+
+      /* Earth / Ochre — temple walls, laterite soil */
+      --ochre:         #c47d2b;
+      --ochre-light:   rgba(196,125,43,0.12);
+
+      /* Text */
+      --text-primary:  #1a1208;      /* Deep warm black */
+      --text-secondary:#4a3c28;      /* Warm brown */
+      --text-muted:    #8a7560;      /* Faded earth */
+
+      /* Decorative */
+      --mundu-stripe:  #c0392b;      /* The iconic red border of Kerala mundu */
+
+      --radius-sm: 6px;
+      --radius-md: 12px;
+      --radius-lg: 18px;
+      --radius-xl: 26px;
+
+      --shadow-sm: 0 1px 4px rgba(100,70,30,0.1);
+      --shadow-md: 0 4px 16px rgba(100,70,30,0.14);
+      --shadow-lg: 0 8px 32px rgba(100,70,30,0.18);
+
+      --sidebar-w: 290px;
+      --transition: 0.22s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    /* ============================================================
+       RESET & BASE
+    ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { height: 100%; scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    ::selection { background: var(--red-light); color: var(--red); }
+
+    /* ============================================================
+       SCROLLBAR
+    ============================================================ */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg-surface); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--green-sage); }
+
+    /* ============================================================
+       KERALA MOTIF — decorative stripe (mundu border)
+    ============================================================ */
+    .mundu-stripe {
+      height: 4px;
+      background: linear-gradient(90deg,
+        var(--green) 0%, var(--green) 30%,
+        var(--mundu-stripe) 30%, var(--mundu-stripe) 70%,
+        var(--green) 70%, var(--green) 100%
+      );
+    }
+
+    /* ============================================================
+       LAYOUT
+    ============================================================ */
+    #app { display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* ---- Header ---- */
+    #header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(253,248,240,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex; flex-direction: column;
+    }
+    #header-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; height: 62px; gap: 16px;
+    }
+
+    #header-left { display: flex; align-items: center; gap: 14px; }
+
+    #sidebar-toggle {
+      background: none; border: none; cursor: pointer;
+      color: var(--text-muted); padding: 7px;
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center;
+      transition: color var(--transition), background var(--transition);
+    }
+    #sidebar-toggle:hover { color: var(--green); background: var(--green-light); }
+
+    #blog-title-link {
+      text-decoration: none; cursor: pointer;
+      display: flex; flex-direction: column; line-height: 1;
+    }
+    #blog-name {
+      font-family: 'Lora', serif;
+      font-size: 1.2rem; font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.3px;
+    }
+    #blog-name span { color: var(--red); }
+    #blog-sub {
+      font-size: 0.68rem; font-weight: 400; letter-spacing: 0.08em;
+      color: var(--text-muted); text-transform: uppercase;
+      margin-top: 1px;
+    }
+
+    #header-right { display: flex; align-items: center; gap: 10px; }
+
+    /* ---- Buttons ---- */
+    .btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 8px 16px; border-radius: var(--radius-sm);
+      font-family: 'Inter', sans-serif; font-size: 0.82rem; font-weight: 500;
+      cursor: pointer; border: none; text-decoration: none;
+      transition: all var(--transition); user-select: none;
+    }
+    .btn-primary {
+      background: var(--red); color: #fff;
+    }
+    .btn-primary:hover { background: var(--red-dim); transform: translateY(-1px); box-shadow: 0 4px 16px var(--red-glow); }
+
+    .btn-green {
+      background: var(--green); color: #fff;
+    }
+    .btn-green:hover { background: var(--green-mid); transform: translateY(-1px); box-shadow: 0 4px 16px var(--green-light); }
+
+    .btn-ghost {
+      background: transparent; color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+    .btn-danger {
+      background: transparent; color: var(--red);
+      border: 1px solid rgba(192,57,43,0.3);
+    }
+    .btn-danger:hover { background: var(--red-light); }
+
+    .btn-sm { padding: 6px 13px; font-size: 0.78rem; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+
+    /* ---- Main layout ---- */
+    #main-wrap {
+      display: flex;
+      margin-top: 66px; /* header height + stripe */
+      min-height: calc(100vh - 66px);
+    }
+
+    /* ---- Sidebar ---- */
+    #sidebar {
+      width: var(--sidebar-w); min-width: var(--sidebar-w);
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border-subtle);
+      display: flex; flex-direction: column;
+      position: fixed; top: 66px; left: 0; bottom: 0;
+      z-index: 50;
+      transition: transform var(--transition);
+      overflow: hidden;
+    }
+    #sidebar.collapsed { transform: translateX(calc(-1 * var(--sidebar-w))); }
+
+    /* Sidebar top decoration */
+    #sidebar-deco {
+      background: var(--green);
+      padding: 14px 16px 12px;
+      position: relative; overflow: hidden;
+    }
+    #sidebar-deco::before {
+      content: '🌴';
+      position: absolute; right: -8px; top: -4px;
+      font-size: 48px; opacity: 0.15; transform: rotate(-10deg);
+    }
+    #sidebar-deco::after {
+      content: '⛰️';
+      position: absolute; right: 36px; bottom: -8px;
+      font-size: 36px; opacity: 0.12;
+    }
+
+    #search-input {
+      width: 100%; padding: 7px 12px;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: var(--radius-sm);
+      color: #fff; font-family: 'Inter', sans-serif; font-size: 0.82rem;
+      outline: none;
+    }
+    #search-input::placeholder { color: rgba(255,255,255,0.6); }
+    #search-input:focus { border-color: rgba(255,255,255,0.5); }
+
+    #posts-list { flex: 1; overflow-y: auto; padding: 6px 0; }
+
+    .post-item {
+      padding: 12px 16px;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+      transition: all var(--transition);
+      position: relative;
+    }
+    .post-item:hover { background: var(--bg-hover); }
+    .post-item.active {
+      background: var(--green-light);
+      border-left-color: var(--green);
+    }
+    .post-item-title {
+      font-size: 0.875rem; font-weight: 500;
+      color: var(--text-primary);
+      line-height: 1.35;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .post-item-meta {
+      font-size: 0.73rem; color: var(--text-muted);
+      margin-top: 3px; display: flex; gap: 7px; flex-wrap: wrap;
+    }
+    .post-item-tag {
+      font-size: 0.66rem;
+      background: var(--green-light); color: var(--green);
+      padding: 1px 7px; border-radius: 99px;
+      border: 1px solid rgba(26,107,58,0.2);
+    }
+
+    #sidebar-footer {
+      padding: 10px 12px;
+      border-top: 1px solid var(--border-subtle);
+      background: var(--bg-card);
+    }
+    .posts-count { font-size: 0.73rem; color: var(--text-muted); margin-bottom: 7px; }
+
+    /* ---- Content ---- */
+    #content {
+      flex: 1; margin-left: var(--sidebar-w);
+      transition: margin-left var(--transition);
+      min-height: calc(100vh - 66px);
+      display: flex; flex-direction: column;
+    }
+    #content.full-width { margin-left: 0; }
+
+    /* ============================================================
+       VIEWS
+    ============================================================ */
+    .view { display: none; flex: 1; }
+    .view.active { display: flex; flex-direction: column; }
+
+    /* ---- HOME ---- */
+    #view-home { padding: 40px 36px; }
+
+    .home-hero {
+      text-align: center;
+      padding: 32px 20px 52px;
+      position: relative;
+    }
+
+    /* Coconut tree SVG decorations */
+    .home-hero::before {
+      content: '🌴';
+      position: absolute; left: 5%; top: 10px;
+      font-size: 80px; opacity: 0.08;
+      transform: rotate(-5deg);
+    }
+    .home-hero::after {
+      content: '🌴';
+      position: absolute; right: 5%; top: 10px;
+      font-size: 80px; opacity: 0.08;
+      transform: rotate(5deg) scaleX(-1);
+    }
+
+    .home-hero h1 {
+      font-family: 'Lora', serif;
+      font-size: 2.6rem; font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.2;
+      margin-bottom: 10px;
+      position: relative;
+    }
+    .home-hero h1 em {
+      font-style: italic; color: var(--red);
+      display: block; font-size: 1.1em;
+    }
+    .home-hero p {
+      font-size: 0.95rem; color: var(--text-secondary);
+      max-width: 420px; margin: 0 auto;
+    }
+
+    /* Decorative line below hero */
+    .hero-divider {
+      display: flex; align-items: center; gap: 12px;
+      max-width: 280px; margin: 20px auto 36px;
+    }
+    .hero-divider-line { flex: 1; height: 1px; background: var(--border); }
+    .hero-divider-icon { color: var(--red); font-size: 1rem; }
+
+    /* Post grid */
+    #posts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 22px;
+      max-width: 1060px; margin: 0 auto;
+    }
+
+    .post-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      overflow: hidden; cursor: pointer;
+      transition: all var(--transition);
+      display: flex; flex-direction: column;
+      box-shadow: var(--shadow-sm);
+    }
+    .post-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--border);
+    }
+    /* Mundu-style top stripe on card hover */
+    .post-card::before {
+      content: '';
+      display: block; height: 3px;
+      background: linear-gradient(90deg, var(--green) 40%, var(--red) 40%);
+      transform: scaleX(0); transform-origin: left;
+      transition: transform 0.3s ease;
+    }
+    .post-card:hover::before { transform: scaleX(1); }
+
+    .post-card-cover {
+      width: 100%; height: 175px;
+      object-fit: cover; display: block;
+    }
+    .post-card-cover-placeholder {
+      width: 100%; height: 175px;
+      background: linear-gradient(135deg, #e8f5ee 0%, #fdf8f0 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.8rem; color: var(--green-sage);
+      position: relative; overflow: hidden;
+    }
+    .post-card-cover-placeholder::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 30% 80%, rgba(26,107,58,0.08) 0%, transparent 70%);
+    }
+
+    .post-card-body { padding: 18px; flex: 1; display: flex; flex-direction: column; }
+    .post-card-date { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 7px; letter-spacing: 0.04em; text-transform: uppercase; }
+    .post-card-title {
+      font-family: 'Lora', serif;
+      font-size: 1.05rem; font-weight: 600;
+      color: var(--text-primary); line-height: 1.4;
+      margin-bottom: 9px;
+    }
+    .post-card-snippet {
+      font-size: 0.84rem; color: var(--text-secondary);
+      line-height: 1.58; flex: 1;
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .post-card-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 13px; }
+    .tag-chip {
+      font-size: 0.68rem; padding: 2px 9px; border-radius: 99px;
+      background: var(--red-light); color: var(--red);
+      border: 1px solid rgba(192,57,43,0.2);
+    }
+
+    .empty-state { text-align: center; padding: 70px 20px; color: var(--text-muted); grid-column: 1/-1; }
+    .empty-state .empty-icon { font-size: 3.5rem; margin-bottom: 14px; }
+    .empty-state h3 { font-size: 1.05rem; color: var(--text-secondary); margin-bottom: 6px; }
+
+    /* ---- READER ---- */
+    #view-reader { padding: 0; overflow-y: auto; }
+    #reader-container { max-width: 720px; margin: 0 auto; padding: 48px 32px 80px; width: 100%; }
+
+    #reader-back {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: var(--text-muted); font-size: 0.82rem;
+      cursor: pointer; margin-bottom: 36px;
+      border: 1px solid var(--border); border-radius: 99px;
+      padding: 5px 14px;
+      transition: all var(--transition);
+    }
+    #reader-back:hover { color: var(--green); border-color: var(--green); background: var(--green-light); }
+
+    /* Kerala-style decorative heading bar */
+    .reader-heading-bar {
+      height: 4px; width: 60px; margin-bottom: 20px;
+      background: linear-gradient(90deg, var(--green) 50%, var(--red) 50%);
+      border-radius: 2px;
+    }
+
+    #reader-title {
+      font-family: 'Lora', serif;
+      font-size: 2.1rem; font-weight: 700; line-height: 1.25;
+      color: var(--text-primary); margin-bottom: 14px;
+    }
+    #reader-meta {
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      color: var(--text-muted); font-size: 0.8rem;
+      padding-bottom: 26px; margin-bottom: 30px;
+      border-bottom: 2px solid var(--border-subtle);
+    }
+    #reader-meta .meta-sep { color: var(--border); }
+    #reader-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    /* Post body typography */
+    #reader-content {
+      font-family: 'Lora', serif;
+      font-size: 1.05rem; line-height: 1.9;
+      color: var(--text-primary);
+    }
+    #reader-content h1, #reader-content h2, #reader-content h3 {
+      font-family: 'Lora', serif; color: var(--text-primary); margin: 1.8em 0 0.6em;
+    }
+    #reader-content h1 { font-size: 1.65rem; }
+    #reader-content h2 { font-size: 1.3rem; color: var(--green); }
+    #reader-content h3 { font-size: 1.08rem; }
+    #reader-content p { margin-bottom: 1.35em; }
+    #reader-content img {
+      max-width: 100%; border-radius: var(--radius-md);
+      box-shadow: var(--shadow-md); margin: 24px 0; display: block;
+    }
+    #reader-content a { color: var(--red); text-decoration: underline; }
+    #reader-content blockquote {
+      border-left: 4px solid var(--red);
+      margin: 1.5em 0; padding: 14px 20px;
+      background: var(--red-light);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      font-style: italic; color: var(--text-secondary);
+    }
+    #reader-content code {
+      background: var(--ochre-light); padding: 2px 6px;
+      border-radius: 4px; font-size: 0.88em; color: var(--ochre);
+    }
+    #reader-content pre {
+      background: #f0ebe0; padding: 18px 20px;
+      border-radius: var(--radius-md); overflow-x: auto;
+      margin: 1.5em 0; border: 1px solid var(--border);
+    }
+    #reader-content pre code { background: none; padding: 0; }
+    #reader-content ul, #reader-content ol { padding-left: 1.7em; margin-bottom: 1.3em; }
+    #reader-content li { margin-bottom: 0.4em; }
+
+    #reader-admin-actions { display: flex; gap: 10px; margin-top: 46px; padding-top: 22px; border-top: 1px solid var(--border-subtle); }
+
+    /* ---- EDITOR ---- */
+    #view-editor { padding: 0; overflow-y: auto; }
+    #editor-container { max-width: 840px; margin: 0 auto; padding: 36px 32px 80px; width: 100%; }
+
+    #editor-top-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 24px; gap: 12px; flex-wrap: wrap;
+    }
+    #editor-top-bar-left { display: flex; align-items: center; gap: 10px; }
+    #editor-top-bar-right { display: flex; align-items: center; gap: 9px; }
+
+    #editor-title-input {
+      width: 100%;
+      font-family: 'Lora', serif; font-size: 2rem; font-weight: 700;
+      background: transparent; border: none; outline: none;
+      color: var(--text-primary); line-height: 1.25;
+      padding: 4px 0;
+      border-bottom: 2px solid var(--border-subtle);
+      margin-bottom: 14px;
+      transition: border-color var(--transition);
+    }
+    #editor-title-input:focus { border-bottom-color: var(--green); }
+    #editor-title-input::placeholder { color: var(--text-muted); }
+
+    #editor-tags-input {
+      width: 100%; padding: 7px 0;
+      background: transparent; border: none; outline: none;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-secondary); font-size: 0.84rem;
+      font-family: 'Inter', sans-serif; margin-bottom: 22px;
+      transition: border-color var(--transition);
+    }
+    #editor-tags-input:focus { border-bottom-color: var(--green); }
+    #editor-tags-input::placeholder { color: var(--text-muted); }
+
+    /* Quill overrides — light Kerala theme */
+    .ql-toolbar.ql-snow {
+      background: #f5f0e8 !important;
+      border: 1px solid var(--border) !important;
+      border-bottom: none !important;
+      border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
+      padding: 10px 12px !important;
+    }
+    .ql-container.ql-snow {
+      background: #fff !important;
+      border: 1px solid var(--border) !important;
+      border-radius: 0 0 var(--radius-md) var(--radius-md) !important;
+      font-family: 'Lora', serif !important;
+      font-size: 1.02rem !important; line-height: 1.85 !important;
+      min-height: 440px;
+    }
+    .ql-editor { min-height: 440px !important; padding: 22px !important; color: var(--text-primary) !important; }
+    .ql-editor.ql-blank::before { color: var(--text-muted) !important; font-style: italic !important; left: 22px !important; }
+    .ql-snow .ql-stroke { stroke: var(--text-secondary) !important; }
+    .ql-snow .ql-fill { fill: var(--text-secondary) !important; }
+    .ql-snow .ql-picker-label { color: var(--text-secondary) !important; }
+    .ql-snow .ql-picker-options { background: #fff !important; border-color: var(--border) !important; border-radius: var(--radius-sm) !important; box-shadow: var(--shadow-md) !important; }
+    .ql-snow .ql-picker-item { color: var(--text-secondary) !important; }
+    .ql-snow .ql-picker-item:hover { color: var(--green) !important; }
+    .ql-snow .ql-active .ql-stroke { stroke: var(--green) !important; }
+    .ql-snow .ql-active .ql-fill { fill: var(--green) !important; }
+    .ql-snow.ql-toolbar button:hover .ql-stroke { stroke: var(--red) !important; }
+    .ql-snow.ql-toolbar button:hover .ql-fill { fill: var(--red) !important; }
+    .ql-editor img { max-width: 100%; border-radius: var(--radius-md); margin: 12px 0; }
+    .ql-editor blockquote { border-left: 4px solid var(--red) !important; background: var(--red-light) !important; border-radius: 0 4px 4px 0 !important; padding: 10px 18px !important; margin: 1em 0 !important; }
+
+    /* Autosave indicator */
+    #autosave-status {
+      font-size: 0.74rem; color: var(--text-muted);
+      display: flex; align-items: center; gap: 5px;
+    }
+    #autosave-status.saving { color: var(--ochre); }
+    #autosave-status.saved { color: var(--green); }
+
+    /* ---- ADMIN VIEW ---- */
+    #view-admin { padding: 40px 36px; overflow-y: auto; }
+    #admin-container { max-width: 580px; margin: 0 auto; }
+
+    .admin-header {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 6px;
+    }
+    .admin-lock-icon { font-size: 1.4rem; }
+    #admin-container h2 { font-family: 'Lora', serif; font-size: 1.5rem; color: var(--text-primary); }
+    #admin-container .section-desc { color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 28px; margin-top: 4px; }
+
+    .settings-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 22px; margin-bottom: 18px;
+      box-shadow: var(--shadow-sm);
+    }
+    .settings-card h3 { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+    .settings-card > p { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px; }
+
+    .field-group { margin-bottom: 14px; }
+    .field-group label { display: block; font-size: 0.79rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 5px; }
+    .field-group input {
+      width: 100%; padding: 8px 13px;
+      background: var(--bg-base); border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.875rem;
+      outline: none; transition: border-color var(--transition);
+    }
+    .field-group input:focus { border-color: var(--green); }
+    .field-group input::placeholder { color: var(--text-muted); }
+    .field-group input[type="password"] { letter-spacing: 0.08em; }
+
+    .info-box {
+      background: var(--green-light); border: 1px solid rgba(26,107,58,0.2);
+      border-radius: var(--radius-sm); padding: 12px 14px;
+      font-size: 0.79rem; color: var(--green); line-height: 1.55; margin-top: 11px;
+    }
+    .info-box a { color: var(--mountain); }
+
+    /* ---- Toasts ---- */
+    #status-bar { position: fixed; bottom: 22px; right: 22px; z-index: 300; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+    .toast {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-md); padding: 11px 16px;
+      font-size: 0.82rem; color: var(--text-primary);
+      box-shadow: var(--shadow-lg);
+      display: flex; align-items: center; gap: 8px;
+      animation: slideInToast 0.28s cubic-bezier(0.4,0,0.2,1);
+      max-width: 300px;
+    }
+    .toast.success { border-color: rgba(26,107,58,0.4); }
+    .toast.error { border-color: rgba(192,57,43,0.4); }
+    .toast.info { border-color: rgba(59,89,152,0.3); }
+    @keyframes slideInToast { from { opacity:0; transform:translateX(18px); } to { opacity:1; transform:translateX(0); } }
+
+    /* ---- Spinner ---- */
+    .spinner { width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--green); border-radius:50%; animation:spin 0.7s linear infinite; display:inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ---- Modal ---- */
+    #modal-overlay { position:fixed; inset:0; z-index:500; background:rgba(26,18,8,0.45); backdrop-filter:blur(5px); display:none; align-items:center; justify-content:center; }
+    #modal-overlay.open { display:flex; }
+    #modal-box { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-xl); padding:30px; max-width:400px; width:90%; box-shadow:var(--shadow-lg); animation:popIn 0.22s ease; }
+    @keyframes popIn { from { opacity:0; transform:scale(0.93) translateY(10px); } to { opacity:1; transform:scale(1); } }
+    #modal-box h3 { font-family:'Lora',serif; font-size:1.1rem; margin-bottom:9px; }
+    #modal-box p { font-size:0.875rem; color:var(--text-secondary); margin-bottom:22px; }
+    #modal-actions { display:flex; gap:9px; justify-content:flex-end; }
+
+    /* ---- Draft badge ---- */
+    .draft-badge { font-size:0.63rem; padding:1px 6px; border-radius:99px; background:var(--ochre-light); color:var(--ochre); border:1px solid rgba(196,125,43,0.3); vertical-align:middle; }
+
+    /* ---- Fade animation ---- */
+    .fade-in { animation: fadeIn 0.3s ease both; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(7px); } to { opacity:1; transform:translateY(0); } }
+    .post-card:nth-child(2) { animation-delay:.05s; }
+    .post-card:nth-child(3) { animation-delay:.1s; }
+    .post-card:nth-child(4) { animation-delay:.15s; }
+    .post-card:nth-child(5) { animation-delay:.2s; }
+    .post-card:nth-child(6) { animation-delay:.25s; }
+    .post-card { animation: fadeIn 0.32s ease both; }
+
+    /* ---- Footer ---- */
+    #site-footer {
+      text-align: center; padding: 22px; font-size: 0.75rem;
+      color: var(--text-muted); border-top: 1px solid var(--border-subtle);
+      margin-top: auto;
+    }
+    #site-footer span { color: var(--red); }
+
+    /* ---- Responsive ---- */
+    @media (max-width: 768px) {
+      #sidebar { width: 100%; min-width: 100%; }
+      #content { margin-left: 0 !important; }
+      #sidebar:not(.collapsed) ~ #content { display: none; }
+      #view-home { padding: 20px 14px; }
+      #editor-container, #reader-container { padding: 22px 16px 58px; }
+      .home-hero h1 { font-size: 1.9rem; }
+      #reader-title { font-size: 1.6rem; }
+      #editor-title-input { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ======================== HEADER ======================== -->
+  <header id="header">
+    <div id="header-inner">
+      <div id="header-left">
+        <button id="sidebar-toggle" title="Toggle sidebar">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <a id="blog-title-link" onclick="showHome()">
+          <div id="blog-name">My <span>Journal</span></div>
+          <div id="blog-sub">Weekly Writings</div>
+        </a>
+      </div>
+      <div id="header-right">
+        <!-- Admin "New Post" button — only shown in admin mode -->
+        <button class="btn btn-primary btn-sm" id="btn-new-post" onclick="newPost()" style="display:none">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Post
+        </button>
+        <!-- Admin settings — only shown in admin mode -->
+        <button class="btn btn-ghost btn-sm" id="btn-admin-settings" onclick="showAdmin()" style="display:none">
+          ⚙️ Settings
+        </button>
+      </div>
+    </div>
+    <!-- Kerala mundu stripe under header -->
+    <div class="mundu-stripe"></div>
+  </header>
+
+  <!-- ======================== MAIN WRAP ======================== -->
+  <div id="main-wrap">
+
+    <!-- ---- Sidebar ---- -->
+    <nav id="sidebar">
+      <div id="sidebar-deco">
+        <input type="text" id="search-input" placeholder="Search posts…" oninput="filterPosts(this.value)" />
+      </div>
+      <div id="posts-list"></div>
+      <div id="sidebar-footer">
+        <div class="posts-count" id="posts-count">Loading…</div>
+        <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center" onclick="showHome()">
+          🏠 All Posts
+        </button>
+      </div>
+    </nav>
+
+    <!-- ---- Content ---- -->
+    <div id="content">
+
+      <!-- HOME VIEW -->
+      <div id="view-home" class="view active">
+        <div class="home-hero">
+          <h1 id="home-blog-title">My<em>Journal</em></h1>
+          <p id="home-blog-desc">Weekly reflections — what I see, what I read, what I think.</p>
+          <div class="hero-divider">
+            <div class="hero-divider-line"></div>
+            <div class="hero-divider-icon">✦</div>
+            <div class="hero-divider-line"></div>
+          </div>
+        </div>
+        <div id="posts-grid"></div>
+        <footer id="site-footer">
+          Made with <span>♥</span> · Hosted on GitHub Pages
+        </footer>
+      </div>
+
+      <!-- READER VIEW -->
+      <div id="view-reader" class="view">
+        <div id="reader-container">
+          <div id="reader-back" onclick="showHome()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+            All posts
+          </div>
+          <div class="reader-heading-bar"></div>
+          <h1 id="reader-title"></h1>
+          <div id="reader-meta">
+            <span id="reader-date"></span>
+            <span class="meta-sep" id="reader-tags-sep" style="display:none">·</span>
+            <span id="reader-tags"></span>
+          </div>
+          <div id="reader-content"></div>
+          <!-- Admin edit/delete — only in admin mode -->
+          <div id="reader-admin-actions" style="display:none">
+            <button class="btn btn-ghost btn-sm" onclick="editCurrentPost()">✏️ Edit Post</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteCurrentPost()">🗑️ Delete</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- EDITOR VIEW -->
+      <div id="view-editor" class="view">
+        <div id="editor-container">
+          <div id="editor-top-bar">
+            <div id="editor-top-bar-left">
+              <button class="btn btn-ghost btn-sm" onclick="confirmLeaveEditor()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                Back
+              </button>
+              <span id="autosave-status">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                Draft saved locally
+              </span>
+            </div>
+            <div id="editor-top-bar-right">
+              <label class="btn btn-ghost btn-sm" for="image-upload-input" style="cursor:pointer" title="Upload image from disk">
+                🖼️ Add Image
+              </label>
+              <input type="file" id="image-upload-input" accept="image/*" style="display:none" onchange="handleImageUpload(event)" />
+              <button class="btn btn-ghost btn-sm" onclick="saveDraft()">💾 Save Draft</button>
+              <button class="btn btn-green btn-sm" id="btn-publish" onclick="publishPost()">
+                🚀 Publish
+              </button>
+            </div>
+          </div>
+          <input type="text" id="editor-title-input" placeholder="Post title…" />
+          <input type="text" id="editor-tags-input" placeholder="Tags (comma separated, e.g. kerala, travel, reading)" />
+          <div id="quill-editor"></div>
+        </div>
+      </div>
+
+      <!-- ADMIN/SETTINGS VIEW — only reachable via ?admin in URL -->
+      <div id="view-admin" class="view">
+        <div id="admin-container">
+          <div class="admin-header">
+            <span class="admin-lock-icon">🔐</span>
+            <h2>Admin Settings</h2>
+          </div>
+          <p class="section-desc">This page is only accessible to you via the secret admin URL.</p>
+
+          <div class="settings-card">
+            <h3>📝 Blog Info</h3>
+            <p>Customize your blog title and tagline.</p>
+            <div class="field-group">
+              <label for="setting-blog-title">Blog Title</label>
+              <input type="text" id="setting-blog-title" placeholder="My Journal" />
+            </div>
+            <div class="field-group">
+              <label for="setting-blog-desc">Tagline / Description</label>
+              <input type="text" id="setting-blog-desc" placeholder="Weekly reflections about what I see and read." />
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="saveBlogSettings()">Save Blog Info</button>
+          </div>
+
+          <div class="settings-card">
+            <h3>🔗 GitHub Connection</h3>
+            <p>Connect your repo to publish posts. Token stored only in this browser, never sent to anyone else.</p>
+            <div class="field-group">
+              <label for="setting-github-owner">GitHub Username</label>
+              <input type="text" id="setting-github-owner" placeholder="your-github-username" />
+            </div>
+            <div class="field-group">
+              <label for="setting-github-repo">Repository Name</label>
+              <input type="text" id="setting-github-repo" placeholder="personal_blog" />
+            </div>
+            <div class="field-group">
+              <label for="setting-github-token">Personal Access Token</label>
+              <input type="password" id="setting-github-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off" />
+            </div>
+            <button class="btn btn-green btn-sm" id="btn-save-github" onclick="saveGitHubSettings()">
+              ✓ Save & Connect
+            </button>
+            <div class="info-box">
+              Create token at <a href="https://github.com/settings/tokens" target="_blank">GitHub → Settings → Developer settings → Personal access tokens</a>.
+              Give it <strong>repo</strong> permission. Your token never leaves your browser.
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <h3>💾 Backup Drafts</h3>
+            <p>Export or import your local drafts as JSON.</p>
+            <div style="display:flex;gap:9px;flex-wrap:wrap">
+              <button class="btn btn-ghost btn-sm" onclick="exportData()">⬇️ Export</button>
+              <label class="btn btn-ghost btn-sm" for="import-file" style="cursor:pointer">⬆️ Import</label>
+              <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)" />
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <h3 style="color:var(--red)">⚠️ Danger Zone</h3>
+            <p>Remove your GitHub token from this browser.</p>
+            <button class="btn btn-danger btn-sm" onclick="disconnectGitHub()">Disconnect GitHub</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- #content -->
+  </div><!-- #main-wrap -->
+</div><!-- #app -->
+
+<div id="status-bar"></div>
+
+<div id="modal-overlay">
+  <div id="modal-box">
+    <h3 id="modal-title">Confirm</h3>
+    <p id="modal-message">Are you sure?</p>
+    <div id="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger btn-sm" id="modal-confirm-btn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// ADMIN MODE — only activated by ?admin in the URL
+// ============================================================
+const IS_ADMIN = location.search.includes('admin') || location.hash.includes('admin');
+
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  posts: [],
+  currentPost: null,
+  isEditing: false,
+  editorDirty: false,
+  quill: null,
+  config: {
+    blogTitle: 'My Journal',
+    blogDesc: 'Weekly reflections — what I see, what I read, what I think.',
+    blogSubtitle: 'Weekly Writings',
+    githubOwner: 'amaljith23-droid',
+    githubRepo: 'personal_blog',
+    githubToken: '',
+  },
+};
+
+// ============================================================
+// LOCAL STORAGE
+// ============================================================
+function loadConfig() {
+  try {
+    const c = localStorage.getItem('blog_config');
+    if (c) state.config = { ...state.config, ...JSON.parse(c) };
+  } catch(e) {}
+}
+function saveConfig() { localStorage.setItem('blog_config', JSON.stringify(state.config)); }
+function loadLocalDrafts() {
+  try { const d = localStorage.getItem('blog_local_drafts'); return d ? JSON.parse(d) : []; } catch(e) { return []; }
+}
+function saveLocalDrafts(d) { localStorage.setItem('blog_local_drafts', JSON.stringify(d)); }
+
+// ============================================================
+// GITHUB API
+// ============================================================
+const GH_API = 'https://api.github.com';
+function ghHeaders() {
+  return { 'Authorization': `token ${state.config.githubToken}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' };
+}
+function isAuthenticated() { return !!(state.config.githubToken && state.config.githubOwner && state.config.githubRepo); }
+
+async function ghGetFile(path) {
+  const res = await fetch(`${GH_API}/repos/${state.config.githubOwner}/${state.config.githubRepo}/contents/${path}`, { headers: ghHeaders() });
+  if (!res.ok) return null;
+  return res.json();
+}
+async function ghPutFile(path, content, message, sha) {
+  const url = `${GH_API}/repos/${state.config.githubOwner}/${state.config.githubRepo}/contents/${path}`;
+  const body = { message, content: btoa(unescape(encodeURIComponent(content))) };
+  if (sha) body.sha = sha;
+  const res = await fetch(url, { method: 'PUT', headers: ghHeaders(), body: JSON.stringify(body) });
+  if (!res.ok) { const err = await res.json(); throw new Error(err.message || 'GitHub API error'); }
+  return res.json();
+}
+async function ghDeleteFile(path, message, sha) {
+  const url = `${GH_API}/repos/${state.config.githubOwner}/${state.config.githubRepo}/contents/${path}`;
+  const res = await fetch(url, { method: 'DELETE', headers: ghHeaders(), body: JSON.stringify({ message, sha }) });
+  if (!res.ok) throw new Error('Could not delete file');
+  return res.json();
+}
+async function ghUploadImage(filename, base64data) {
+  const b64 = base64data.split(',')[1];
+  const path = `images/${filename}`;
+  const existing = await ghGetFile(path);
+  const sha = existing ? existing.sha : undefined;
+  const url = `${GH_API}/repos/${state.config.githubOwner}/${state.config.githubRepo}/contents/${path}`;
+  const body = { message: `Upload image ${filename}`, content: b64 };
+  if (sha) body.sha = sha;
+  const res = await fetch(url, { method: 'PUT', headers: ghHeaders(), body: JSON.stringify(body) });
+  if (!res.ok) throw new Error('Image upload failed');
+  const data = await res.json();
+  return data.content.download_url;
+}
+
+// ============================================================
+// LOAD POSTS FROM GITHUB
+// ============================================================
+async function loadPostsFromGitHub() {
+  const rawBase = `https://raw.githubusercontent.com/${state.config.githubOwner}/${state.config.githubRepo}/main`;
+  try {
+    const res = await fetch(`${rawBase}/posts.json?_=${Date.now()}`);
+    if (!res.ok) return;
+    state.posts = await res.json();
+    renderSidebar();
+    renderGrid();
+  } catch(e) { console.warn('Could not load posts:', e); }
+}
+
+async function loadPostContentFromGitHub(postId) {
+  const rawBase = `https://raw.githubusercontent.com/${state.config.githubOwner}/${state.config.githubRepo}/main`;
+  const res = await fetch(`${rawBase}/posts/${postId}.json?_=${Date.now()}`);
+  if (!res.ok) throw new Error('Post not found');
+  return res.json();
+}
+
+// ============================================================
+// PUBLISH TO GITHUB
+// ============================================================
+async function publishToGitHub(post, isNew) {
+  showToast('Publishing to GitHub…', 'info');
+  // Upload base64 images
+  let content = post.content;
+  const imgRegex = /<img[^>]+src="(data:image\/[^;]+;base64,[^"]+)"[^>]*>/g;
+  let match; const uploads = [];
+  while ((match = imgRegex.exec(content)) !== null) uploads.push({ src: match[1] });
+  for (const u of uploads) {
+    try {
+      const ext = u.src.split(';')[0].split('/')[1] || 'png';
+      const fname = `img-${Date.now()}-${Math.random().toString(36).substr(2,6)}.${ext}`;
+      const url = await ghUploadImage(fname, u.src);
+      content = content.replace(u.src, url);
+    } catch(e) { showToast('Image upload error: ' + e.message, 'error'); }
+  }
+  post.content = content;
+
+  // Save post file
+  const postPath = `posts/${post.id}.json`;
+  const existing = await ghGetFile(postPath);
+  await ghPutFile(postPath, JSON.stringify(post, null, 2), `${isNew ? 'Add' : 'Update'} post: ${post.title}`, existing?.sha);
+
+  // Update manifest
+  const manifestFile = await ghGetFile('posts.json');
+  let manifest = [];
+  if (manifestFile) manifest = JSON.parse(decodeURIComponent(escape(atob(manifestFile.content.replace(/\n/g,'')))));
+  const entry = {
+    id: post.id, title: post.title, tags: post.tags,
+    createdAt: post.createdAt, updatedAt: post.updatedAt,
+    snippet: stripHtml(post.content).substring(0, 200),
+    coverImage: extractFirstImage(post.content),
+  };
+  const idx = manifest.findIndex(p => p.id === post.id);
+  if (idx >= 0) manifest[idx] = entry; else manifest.unshift(entry);
+  await ghPutFile('posts.json', JSON.stringify(manifest, null, 2), 'Update manifest', manifestFile?.sha);
+
+  state.posts = manifest;
+  renderSidebar(); renderGrid();
+  showToast('✅ Published! Live in ~30 seconds.', 'success');
+  return post;
+}
+
+async function deleteFromGitHub(postId, postTitle) {
+  const postFile = await ghGetFile(`posts/${postId}.json`);
+  if (postFile) await ghDeleteFile(`posts/${postId}.json`, `Delete: ${postTitle}`, postFile.sha);
+  const manifestFile = await ghGetFile('posts.json');
+  if (manifestFile) {
+    const manifest = JSON.parse(decodeURIComponent(escape(atob(manifestFile.content.replace(/\n/g,'')))));
+    const updated = manifest.filter(p => p.id !== postId);
+    await ghPutFile('posts.json', JSON.stringify(updated, null, 2), `Remove: ${postTitle}`, manifestFile.sha);
+    state.posts = updated; renderSidebar(); renderGrid();
+  }
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function generateId() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}-${Math.random().toString(36).substr(2,7)}`;
+}
+function formatDate(iso) { return new Date(iso).toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' }); }
+function stripHtml(html) { const t=document.createElement('div'); t.innerHTML=html; return t.textContent||''; }
+function extractFirstImage(html) { const m=html.match(/<img[^>]+src="([^"]+)"/); return m?m[1]:null; }
+function parseTags(str) { return str.split(',').map(t=>t.trim()).filter(Boolean); }
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ============================================================
+// SIDEBAR & GRID
+// ============================================================
+function renderSidebar() {
+  const list = document.getElementById('posts-list');
+  const count = document.getElementById('posts-count');
+  const drafts = IS_ADMIN ? loadLocalDrafts().filter(d => d.isDraft && !state.posts.find(p => p.id === d.id)) : [];
+  const all = [...drafts.map(d=>({...d,_isDraft:true})), ...state.posts];
+
+  count.textContent = `${state.posts.length} post${state.posts.length!==1?'s':''}${drafts.length?` · ${drafts.length} draft${drafts.length!==1?'s':''}` :''}`;
+
+  if (all.length === 0) {
+    list.innerHTML = `<div style="padding:22px 14px;text-align:center;color:var(--text-muted);font-size:0.81rem">No posts yet.<br/>Start writing!</div>`;
+    return;
+  }
+  list.innerHTML = all.map(post => `
+    <div class="post-item${state.currentPost?.id===post.id?' active':''}" onclick="openPost('${post.id}',${post._isDraft||false})" id="sidebar-item-${post.id}">
+      <div class="post-item-title">${escHtml(post.title||'Untitled')}${post._isDraft?'<span class="draft-badge"> draft</span>':''}</div>
+      <div class="post-item-meta">
+        <span>${formatDate(post.createdAt)}</span>
+        ${(post.tags||[]).slice(0,2).map(t=>`<span class="post-item-tag">${escHtml(t)}</span>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function renderGrid() {
+  const grid = document.getElementById('posts-grid');
+  if (state.posts.length === 0) {
+    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">🌴</div><h3>No posts yet</h3><p>${IS_ADMIN?'Click "New Post" to start writing.':'Come back soon!'}</p></div>`;
+    return;
+  }
+  const emojis = ['📝','🌿','🏔️','🌊','🎋','🌺','🍃','✍️'];
+  grid.innerHTML = state.posts.map((post,i) => {
+    const cover = post.coverImage;
+    const tags = post.tags || [];
+    return `
+      <div class="post-card" onclick="openPost('${post.id}',false)">
+        ${cover
+          ? `<img class="post-card-cover" src="${escHtml(cover)}" alt="${escHtml(post.title)}" loading="lazy"/>`
+          : `<div class="post-card-cover-placeholder">${emojis[i%emojis.length]}</div>`
+        }
+        <div class="post-card-body">
+          <div class="post-card-date">${formatDate(post.createdAt)}</div>
+          <div class="post-card-title">${escHtml(post.title||'Untitled')}</div>
+          <div class="post-card-snippet">${escHtml(post.snippet||'')}</div>
+          ${tags.length?`<div class="post-card-tags">${tags.map(t=>`<span class="tag-chip">${escHtml(t)}</span>`).join('')}</div>`:''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function filterPosts(q) {
+  q = q.toLowerCase();
+  document.querySelectorAll('.post-item').forEach(el => {
+    el.style.display = el.querySelector('.post-item-title').textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+// ============================================================
+// VIEW MANAGEMENT
+// ============================================================
+function setView(id) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById(id).classList.add('active','fade-in');
+  setTimeout(()=>document.getElementById(id).classList.remove('fade-in'),400);
+}
+function showHome() { setView('view-home'); state.currentPost=null; state.isEditing=false; renderSidebar(); document.title=state.config.blogTitle; }
+function showAdmin() { if(!IS_ADMIN) return; setView('view-admin'); loadSettingsForm(); }
+
+// ============================================================
+// OPEN POST
+// ============================================================
+async function openPost(postId, isDraft) {
+  document.querySelectorAll('.post-item').forEach(el=>el.classList.remove('active'));
+  const si = document.getElementById(`sidebar-item-${postId}`);
+  if (si) si.classList.add('active');
+
+  if (isDraft) {
+    const draft = loadLocalDrafts().find(d=>d.id===postId);
+    if (draft) { state.currentPost=draft; renderReader(draft); setView('view-reader'); }
+    return;
+  }
+
+  setView('view-reader');
+  document.getElementById('reader-content').innerHTML = '<div style="display:flex;justify-content:center;padding:40px"><span class="spinner"></span></div>';
+
+  try {
+    const post = await loadPostContentFromGitHub(postId);
+    state.currentPost = post;
+    renderReader(post);
+  } catch(e) {
+    const meta = state.posts.find(p=>p.id===postId);
+    if (meta) renderReader({...meta, content:`<p>${meta.snippet||''}</p>`});
+    else document.getElementById('reader-content').innerHTML = '<p style="color:var(--red)">Could not load post.</p>';
+  }
+}
+
+function renderReader(post) {
+  document.getElementById('reader-title').textContent = post.title || 'Untitled';
+  document.getElementById('reader-date').textContent = formatDate(post.createdAt);
+  const tagsEl = document.getElementById('reader-tags');
+  const tagSep = document.getElementById('reader-tags-sep');
+  const tags = post.tags || [];
+  tagsEl.innerHTML = tags.map(t=>`<span class="tag-chip">${escHtml(t)}</span>`).join('');
+  tagSep.style.display = tags.length ? '' : 'none';
+  document.getElementById('reader-content').innerHTML = post.content || '';
+  document.getElementById('reader-admin-actions').style.display = IS_ADMIN ? 'flex' : 'none';
+  document.title = `${post.title||'Post'} — ${state.config.blogTitle}`;
+}
+
+// ============================================================
+// EDITOR
+// ============================================================
+function initQuill() {
+  if (state.quill) return;
+  state.quill = new Quill('#quill-editor', {
+    theme: 'snow',
+    placeholder: 'Start writing your story…',
+    modules: {
+      toolbar: [
+        [{ header: [1,2,3,false] }],
+        ['bold','italic','underline','strike'],
+        [{ color:[] },{ background:[] }],
+        ['blockquote','code-block'],
+        [{ list:'ordered' },{ list:'bullet' }],
+        ['link','image'], ['clean'],
+      ],
+      clipboard: { matchVisual: false },
+    },
+  });
+  state.quill.root.addEventListener('paste', handlePaste);
+  state.quill.on('text-change', () => { state.editorDirty=true; scheduleAutosave(); });
+}
+
+function handlePaste(e) {
+  const items = (e.clipboardData||window.clipboardData).items;
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      e.preventDefault();
+      const reader = new FileReader();
+      reader.onload = ev => insertImageIntoEditor(ev.target.result);
+      reader.readAsDataURL(item.getAsFile());
+    }
+  }
+}
+
+function insertImageIntoEditor(dataUrl) {
+  const range = state.quill.getSelection(true);
+  state.quill.insertEmbed(range.index, 'image', dataUrl);
+  state.quill.setSelection(range.index+1);
+}
+
+function handleImageUpload(e) {
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => insertImageIntoEditor(ev.target.result);
+  reader.readAsDataURL(file);
+  e.target.value='';
+}
+
+let autosaveTimer = null;
+function scheduleAutosave() {
+  if (autosaveTimer) clearTimeout(autosaveTimer);
+  const s = document.getElementById('autosave-status');
+  s.className='saving'; s.innerHTML='<span class="spinner"></span> Saving…';
+  autosaveTimer = setTimeout(() => {
+    saveDraft(true);
+    s.className='saved'; s.innerHTML='✔ Saved locally';
+    setTimeout(() => { s.className=''; s.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg> Draft saved locally'; }, 2000);
+  }, 1200);
+}
+
+function newPost() {
+  if (!isAuthenticated()) { showToast('Configure GitHub in Settings first!','error'); showAdmin(); return; }
+  state.currentPost=null; state.isEditing=false; state.editorDirty=false;
+  initQuill();
+  document.getElementById('editor-title-input').value='';
+  document.getElementById('editor-tags-input').value='';
+  state.quill.setContents([]);
+  state.quill.focus();
+  setView('view-editor');
+}
+
+function editCurrentPost() {
+  if (!state.currentPost||!IS_ADMIN) return;
+  state.isEditing=true; initQuill();
+  document.getElementById('editor-title-input').value=state.currentPost.title||'';
+  document.getElementById('editor-tags-input').value=(state.currentPost.tags||[]).join(', ');
+  state.quill.root.innerHTML=state.currentPost.content||'';
+  state.editorDirty=false; setView('view-editor');
+}
+
+function saveDraft(silent=false) {
+  if (!state.quill) return;
+  const title = document.getElementById('editor-title-input').value.trim()||'Untitled';
+  const tags = parseTags(document.getElementById('editor-tags-input').value);
+  const content = state.quill.root.innerHTML;
+  const now = new Date().toISOString();
+  const draft = {
+    id: (state.isEditing&&state.currentPost?.id)?state.currentPost.id:(state.currentPost?.id||generateId()),
+    title, tags, content, isDraft:true,
+    createdAt: state.currentPost?.createdAt||now, updatedAt:now,
+  };
+  if (!state.currentPost?.id) state.currentPost=draft;
+  const drafts = loadLocalDrafts();
+  const idx = drafts.findIndex(d=>d.id===draft.id);
+  if (idx>=0) drafts[idx]=draft; else drafts.unshift(draft);
+  saveLocalDrafts(drafts); state.editorDirty=false;
+  if (!silent) { showToast('Draft saved 💾','success'); renderSidebar(); }
+}
+
+async function publishPost() {
+  if (!isAuthenticated()) { showToast('Set up GitHub in Settings!','error'); return; }
+  if (!state.quill) return;
+  const title = document.getElementById('editor-title-input').value.trim();
+  if (!title) { showToast('Please enter a title.','error'); return; }
+  const tags = parseTags(document.getElementById('editor-tags-input').value);
+  const content = state.quill.root.innerHTML;
+  const now = new Date().toISOString();
+  const isNew = !(state.isEditing&&state.currentPost?.id);
+  const post = {
+    id: (state.isEditing&&state.currentPost?.id)?state.currentPost.id:generateId(),
+    title, tags, content, isDraft:false,
+    createdAt: state.currentPost?.createdAt||now, updatedAt:now,
+  };
+  const btn = document.getElementById('btn-publish');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Publishing…';
+  try {
+    await publishToGitHub(post, isNew);
+    saveLocalDrafts(loadLocalDrafts().filter(d=>d.id!==post.id));
+    state.currentPost=post; state.isEditing=true;
+    renderSidebar(); renderReader(post); setView('view-reader');
+  } catch(e) {
+    showToast('Publish failed: '+e.message,'error');
+  } finally {
+    btn.disabled=false; btn.innerHTML='🚀 Publish';
+  }
+}
+
+function confirmLeaveEditor() {
+  if (state.editorDirty) openModal('Leave editor?','Unsaved changes will be saved as a local draft.',()=>{ saveDraft(true); showHome(); });
+  else showHome();
+}
+
+// ============================================================
+// DELETE
+// ============================================================
+async function deleteCurrentPost() {
+  if (!state.currentPost||!IS_ADMIN) return;
+  openModal('Delete post?',`"${state.currentPost.title}" will be permanently deleted from GitHub.`, async () => {
+    try {
+      showToast('Deleting…','info');
+      await deleteFromGitHub(state.currentPost.id, state.currentPost.title);
+      saveLocalDrafts(loadLocalDrafts().filter(d=>d.id!==state.currentPost.id));
+      showToast('Deleted ✓','success'); state.currentPost=null; showHome();
+    } catch(e) { showToast('Delete failed: '+e.message,'error'); }
+  });
+}
+
+// ============================================================
+// SETTINGS
+// ============================================================
+function loadSettingsForm() {
+  document.getElementById('setting-blog-title').value = state.config.blogTitle;
+  document.getElementById('setting-blog-desc').value = state.config.blogDesc;
+  document.getElementById('setting-github-owner').value = state.config.githubOwner;
+  document.getElementById('setting-github-repo').value = state.config.githubRepo;
+  document.getElementById('setting-github-token').value = state.config.githubToken;
+}
+function saveBlogSettings() {
+  state.config.blogTitle = document.getElementById('setting-blog-title').value.trim()||'My Journal';
+  state.config.blogDesc = document.getElementById('setting-blog-desc').value.trim();
+  saveConfig(); applyBlogInfo(); showToast('Saved ✓','success');
+}
+function saveGitHubSettings() {
+  state.config.githubOwner = document.getElementById('setting-github-owner').value.trim();
+  state.config.githubRepo = document.getElementById('setting-github-repo').value.trim();
+  state.config.githubToken = document.getElementById('setting-github-token').value.trim();
+  saveConfig();
+  if (isAuthenticated()) { showToast('GitHub connected! Loading posts…','success'); loadPostsFromGitHub(); }
+  else showToast('Fill in all GitHub fields.','error');
+}
+function disconnectGitHub() {
+  openModal('Disconnect?','Your token will be removed from this browser.',()=>{
+    state.config.githubToken=''; saveConfig(); showToast('Disconnected ✓','success'); showHome();
+  });
+}
+function applyBlogInfo() {
+  document.getElementById('blog-name').innerHTML = `${escHtml(state.config.blogTitle)} <span>·</span>`;
+  document.getElementById('home-blog-title').innerHTML = escHtml(state.config.blogTitle).replace(/(\S+)\s*$/, '<em>$1</em>');
+  document.getElementById('home-blog-desc').textContent = state.config.blogDesc;
+  document.title = state.config.blogTitle;
+}
+
+// ============================================================
+// EXPORT / IMPORT
+// ============================================================
+function exportData() {
+  const data = { config:{...state.config,githubToken:''}, drafts:loadLocalDrafts(), posts:state.posts, exportedAt:new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=`journal-backup-${new Date().toISOString().split('T')[0]}.json`;
+  a.click(); URL.revokeObjectURL(url);
+  showToast('Backup downloaded ✓','success');
+}
+function importData(e) {
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try {
+      const data=JSON.parse(ev.target.result);
+      if(data.drafts) saveLocalDrafts(data.drafts);
+      if(data.posts) state.posts=data.posts;
+      renderSidebar(); renderGrid(); showToast('Imported ✓','success');
+    } catch { showToast('Import failed — invalid file','error'); }
+  };
+  reader.readAsText(file); e.target.value='';
+}
+
+// ============================================================
+// SIDEBAR TOGGLE
+// ============================================================
+document.getElementById('sidebar-toggle').addEventListener('click',()=>{
+  document.getElementById('sidebar').classList.toggle('collapsed');
+  document.getElementById('content').classList.toggle('full-width');
+});
+
+// ============================================================
+// TOASTS
+// ============================================================
+function showToast(message,type='info') {
+  const bar=document.getElementById('status-bar');
+  const icons={success:'✅',error:'❌',info:'ℹ️'};
+  const t=document.createElement('div');
+  t.className=`toast ${type}`;
+  t.innerHTML=`<span>${icons[type]||''}</span> ${escHtml(message)}`;
+  bar.appendChild(t);
+  setTimeout(()=>{ t.style.cssText='opacity:0;transform:translateX(18px);transition:all 0.3s'; setTimeout(()=>t.remove(),300); },3500);
+}
+
+// ============================================================
+// MODAL
+// ============================================================
+function openModal(title,message,onConfirm) {
+  document.getElementById('modal-title').textContent=title;
+  document.getElementById('modal-message').textContent=message;
+  document.getElementById('modal-confirm-btn').onclick=()=>{ closeModal(); onConfirm(); };
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+document.getElementById('modal-overlay').addEventListener('click',e=>{ if(e.target===document.getElementById('modal-overlay')) closeModal(); });
+
+// ============================================================
+// INIT
+// ============================================================
+// GitHub owner & repo pre-configured for blog.lamaverse.co.in
+// amaljith23-droid/personal_blog
+
+function init() {
+  loadConfig();
+  applyBlogInfo();
+
+  // Show admin controls only in admin mode
+  if (IS_ADMIN) {
+    document.getElementById('btn-new-post').style.display = '';
+    document.getElementById('btn-admin-settings').style.display = '';
+  }
+
+  renderSidebar();
+  renderGrid();
+
+  if (state.config.githubOwner && state.config.githubRepo) {
+    loadPostsFromGitHub();
+  }
+}
+
+init();
+</script>
+</body>
+</html>
